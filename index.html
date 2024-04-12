@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Best Route</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    body {
+      background-color: #f0f0f0;
+    }
+    .container {
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+    .documentosList {
+      list-style-type: none;
+      padding: 0;
+      text-align: left;
+    }
+    .documentosList li {
+      margin-bottom: 20px;
+      padding: 20px;
+      border-radius: 8px;
+      background-color: #f9f9f9;
+    }
+    .documentosList li:nth-child(odd) {
+      background-color: #e9e9e9;
+    }
+    .documentosList li strong {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .modal-content {
+      border-radius: 8px;
+    }
+    .modal-header {
+      border-bottom: none;
+    }
+    .qr-code-container {
+      display: inline-block;
+      margin-right: 20px;
+      padding: 10px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .qr-code-container img {
+      width: 150px;
+      height: 150px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Página de Login -->
+  <div id="loginPage" class="container">
+    <h1 class="mb-4">Bem-vindo ao login do Best Route</h1>
+    <form id="loginForm">
+      <div class="form-group">
+        <input type="text" class="form-control" id="username" placeholder="Username" required>
+      </div>
+      <div class="form-group">
+        <input type="password" class="form-control" id="password" placeholder="Password" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Login</button>
+    </form>
+  </div>
+
+  <!-- Página de Opções -->
+  <div id="optionsPage" class="container" style="display: none;">
+    <h1 class="mb-4">Por favor, escolha a opção desejada.</h1>
+    <div class="form-group">
+      <button class="btn btn-primary" id="lerNF">Ler NF</button>
+      <button class="btn btn-primary" id="lerCodigoBarras">Ler Código de Barras</button>
+      <button class="btn btn-primary" id="lerCTE">Ler CTE</button>
+    </div>
+  </div>
+
+  <!-- Página de Inclusão de Documentos -->
+  <div id="incluirDocumentosPage" class="container" style="display: none;">
+    <h1 class="mb-4">Incluir Documentos</h1>
+    <form id="incluirDocumentosForm">
+      <div class="form-group">
+        <input type="text" class="form-control" id="documento" placeholder="Número do Documento" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Incluir</button>
+    </form>
+    <p id="mensagem" class="text-danger mt-3"></p>
+    <button id="terminarInclusao" class="btn btn-primary mt-3">Terminar Inclusão</button>
+  </div>
+
+  <!-- Página de Conclusão -->
+  <div id="conclusaoPage" class="container" style="display: none;">
+    <h1 class="mb-4">Conclusão</h1>
+    <div class="qr-code-container" id="qrCodeContainer">
+      <!-- QR Code será gerado aqui -->
+    </div>
+    <ul id="documentosList" class="documentosList"></ul>
+    <button id="voltarOpcoes" class="btn btn-primary mt-3">Sair</button>
+  </div>
+
+  <!-- Modal de Detalhes do Documento -->
+  <div class="modal fade" id="detalhesDocumentoModal" tabindex="-1" role="dialog" aria-labelledby="detalhesDocumentoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="detalhesDocumentoModalLabel">Detalhes do Documento</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body" id="detalhesDocumentoModalBody">
+          <!-- Detalhes do documento serão carregados aqui -->
+        </div>
+        <div class="modal-footer">
+          <button id="fechar" type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+  <script>
+    // Variáveis de documentos e contador
+    var documentos = [];
+    var numDocumentos = 0;
+
+    // Limpar dados se o usuário fechar a página
+    window.addEventListener('beforeunload', function() {
+      documentos = [];
+      numDocumentos = 0;
+    });
+
+    // Simulando a lógica de login
+    document.getElementById('loginForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+      var username = document.getElementById('username').value;
+      var password = document.getElementById('password').value;
+      if (username === '123' && password === '123') {
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('optionsPage').style.display = 'block';
+      } else {
+        alert('Senha ou usuário incorreto');
+      }
+    });
+
+    // Adicionando funcionalidade aos botões de opções
+    document.getElementById('lerNF').addEventListener('click', mostrarPaginaInclusao);
+    document.getElementById('lerCodigoBarras').addEventListener('click', mostrarPaginaInclusao);
+    document.getElementById('lerCTE').addEventListener('click', mostrarPaginaInclusao);
+    document.getElementById('voltarOpcoes').addEventListener('click', function() {
+        window.location.reload(); // Recarrega a página
+});
+
+    // Função para mostrar a página de inclusão de documentos
+    function mostrarPaginaInclusao() {
+      document.getElementById('optionsPage').style.display = 'none';
+      document.getElementById('incluirDocumentosPage').style.display = 'block';
+    }
+
+    // Adicionando funcionalidade ao formulário de inclusão de documentos
+    document.getElementById('incluirDocumentosForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+      var documento = document.getElementById('documento').value;
+      if (numDocumentos < 3) {
+        console.log('Documento incluído:', documento);
+        var horaSaida = numDocumentos === 0 ? '08:00' : documentos[numDocumentos - 1].hora_chegada;
+        var horaChegada = calcularHoraChegada(horaSaida);
+        documentos.push({
+          numero: documento,
+          responsavel: getNomeAleatorio(),
+          endereco: getEnderecoAleatorio(),
+          cpf_cnpj: '123.456.789-00',
+          distancia: '10 km',
+          tempo_medio: '1 hora',
+          hora_saida: horaSaida,
+          hora_chegada: horaChegada
+        });
+        numDocumentos++;
+        document.getElementById('documento').value = '';
+        document.getElementById('mensagem').textContent = '';
+      } else {
+        document.getElementById('mensagem').textContent = 'O servidor está cheio. Você não pode incluir mais documentos.';
+      }
+    });
+
+    // Função para calcular a hora de chegada com base na hora de saída
+    function calcularHoraChegada(horaSaida) {
+      var hora = parseInt(horaSaida.split(':')[0]);
+      var minuto = parseInt(horaSaida.split(':')[1]);
+      var minutosDeEntrega = numDocumentos * 60; // Cada documento leva 1 hora
+      var totalMinutos = minuto + minutosDeEntrega;
+      var novaHora = hora + Math.floor(totalMinutos / 60);
+      var novoMinuto = totalMinutos % 60;
+      return (novaHora < 10 ? '0' + novaHora : novaHora) + ':' + (novoMinuto < 10 ? '0' + novoMinuto : novoMinuto);
+    }
+
+    // Adicionando funcionalidade ao botão de terminar inclusão
+    document.getElementById('terminarInclusao').addEventListener('click', function() {
+      document.getElementById('incluirDocumentosPage').style.display = 'none';
+      mostrarPaginaConclusao();
+      numDocumentos = 0; // Reiniciar o contador de documentos
+    });
+
+    // Função para mostrar a página de conclusão
+    function mostrarPaginaConclusao() {
+      document.getElementById('conclusaoPage').style.display = 'block';
+      var documentosList = document.getElementById('documentosList');
+      documentosList.innerHTML = '';
+      // Exibir documentos resumidos
+      documentos.forEach(function(doc, index) {
+        var listItem = document.createElement('li');
+        listItem.innerHTML = `
+          <strong>${index + 1}. ${doc.responsavel}</strong> - ${doc.numero} - ${doc.endereco} - <button class="btn btn-primary btn-sm" onclick="mostrarDetalhes(${index})">Mostrar Mais</button>
+        `;
+        documentosList.appendChild(listItem);
+      });
+      // Gerar QR Code
+      var qrCodeContainer = document.getElementById('qrCodeContainer');
+      qrCodeContainer.innerHTML = '';
+      var qrCode = new QRCode(qrCodeContainer, {
+        text: 'http://example.com/' + Math.random(), // Link aleatório para teste
+        width: 150,
+        height: 150
+      });
+    }
+
+    // Função para mostrar os detalhes completos do documento em um modal
+    function mostrarDetalhes(index) {
+      var doc = documentos[index];
+      var modalBody = document.getElementById('detalhesDocumentoModalBody');
+      modalBody.innerHTML = `
+        <strong>Responsável:</strong> ${doc.responsavel}<br>
+        <strong>Número:</strong> ${doc.numero}<br>
+        <strong>Endereço:</strong> ${doc.endereco}<br>
+        <strong>CPF/CNPJ:</strong> ${doc.cpf_cnpj}<br>
+        <strong>Distância:</strong> ${doc.distancia}<br>
+        <strong>Tempo Médio:</strong> ${doc.tempo_medio}<br>
+        <strong>Hora de Saída:</strong> ${doc.hora_saida}<br>
+        <strong>Hora de Chegada:</strong> ${doc.hora_chegada}<br>
+        <strong>Número de Protocolo:</strong> ${generateProtocolNumber()}<br>
+        <strong>Código de Barras:</strong> ${generateRandomBarcode()}<br>
+      `;
+      $('#detalhesDocumentoModal').modal('show');
+    }
+
+    // Função para fechar o modal
+    function fecharModal() {
+      $('#detalhesDocumentoModal').modal('hide');
+    }
+
+    // Função para gerar um número de protocolo aleatório
+    function generateProtocolNumber() {
+      return Math.floor(Math.random() * 1000000000000); // 12 dígitos aleatórios
+    }
+
+    // Função para gerar um código de barras aleatório
+    function generateRandomBarcode() {
+      return Math.floor(Math.random() * 1000000000000000000000000000000000); // 32 dígitos aleatórios
+    }
+
+    // Função para gerar um nome aleatório
+    function getNomeAleatorio() {
+      var nomes = ['Julia dos Santos Neves', 'Lucas da Silva Souza', 'Maria Oliveira Santos'];
+      return nomes[Math.floor(Math.random() * nomes.length)];
+    }
+
+    // Função para gerar um endereço aleatório
+    function getEnderecoAleatorio() {
+      var enderecos = ['Rua A, 123', 'Av. B, 456', 'Rua C, 789'];
+      return enderecos[Math.floor(Math.random() * enderecos.length)];
+    }
+  </script>
+
+</body>
+</html>
+
